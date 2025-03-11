@@ -28,6 +28,16 @@
       "deploy": [
         "backend"
       ]
+    },
+    {
+      "name": "Babbage testnet",
+      "provider": "CARS",
+      "CARSCloudURL": "https://cars.babbage.systems",
+      "projectID": "905e31b7e0e335dc15d702b444b3287b",
+      "network": "testnet",
+      "deploy": [
+        "backend"
+      ]
     }
   ]
 }
