@@ -15,7 +15,7 @@
   "author": "",
   "license": "SEE LICENSE IN LICENSE.txt",
   "devDependencies": {
-    "@bsv/cars-cli": "^1.0.4",
-    "@bsv/lars": "^1.0.10"
+    "@bsv/cars-cli": "^1.1.4",
+    "@bsv/lars": "^1.3.1"
   }
 }
