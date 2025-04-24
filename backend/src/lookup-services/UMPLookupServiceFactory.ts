@@ -75,22 +75,29 @@ class UMPLookupService implements LookupService {
     if (!query) {
       throw new Error('Lookup must include a valid query!')
     }
+
+    // build the filter based on which key is present
+    let filter: Record<string, any>
     if (query.presentationHash) {
-      const result = await this.records.findOne({ presentationHash: query.presentationHash })
-      if (!result) return []
-      return [{ txid: result.txid, outputIndex: result.outputIndex }]
+      filter = { presentationHash: query.presentationHash }
     } else if (query.recoveryHash) {
-      const result = await this.records.findOne({ recoveryHash: query.recoveryHash })
-      if (!result) return []
-      return [{ txid: result.txid, outputIndex: result.outputIndex }]
+      filter = { recoveryHash: query.recoveryHash }
     } else if (query.outpoint) {
       const [txid, outputIndex] = (query.outpoint as string).split('.')
-      const result = await this.records.findOne({ txid, outputIndex: Number(outputIndex) })
-      if (!result) return []
-      return [{ txid: result.txid, outputIndex: result.outputIndex }]
+      filter = { txid, outputIndex: Number(outputIndex) }
     } else {
-      throw new Error('Query parameters must include presentationHash, recoveryHash, or outpoint!')
+      throw new Error(
+        'Query parameters must include presentationHash, recoveryHash, or outpoint!'
+      )
     }
+
+    // find the single newest document
+    const doc = await this.records.findOne(filter, {
+      sort: { _id: -1 }
+    })
+
+    if (!doc) return []
+    return [{ txid: doc.txid, outputIndex: doc.outputIndex }]
   }
 }
 
