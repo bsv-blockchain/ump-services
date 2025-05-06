@@ -1,5 +1,5 @@
-import { LookupService } from '@bsv/overlay'
-import { Script, PushDrop, Utils } from '@bsv/sdk'
+import { AdmissionMode, LookupService, OutputAdmittedByTopic, OutputSpent, SpendNotificationMode } from '@bsv/overlay'
+import { PushDrop, Utils } from '@bsv/sdk'
 import { UMPRecord, UTXOReference } from '../types.js'
 import { Db, Collection } from 'mongodb'
 import umpLookupDocs from './UMPLookupDocs.md.js'
@@ -8,6 +8,8 @@ import umpLookupDocs from './UMPLookupDocs.md.js'
  * Implements a Lookup Service for the User Management Protocol
  */
 class UMPLookupService implements LookupService {
+  readonly admissionMode: AdmissionMode = 'locking-script'
+  readonly spendNotificationMode: SpendNotificationMode = 'none'
   records: Collection<UMPRecord>
 
   constructor(db: Db) {
@@ -25,18 +27,12 @@ class UMPLookupService implements LookupService {
     }
   }
 
-  /**
-   * Notifies the lookup service of a new output added.
-   * @param {Object} obj all params are given in an object
-   * @param {string} obj.txid the transactionId of the transaction this UTXO is apart of
-   * @param {Number} obj.outputIndex index of the output
-   * @param {Buffer} obj.outputScript the outputScript data for the given UTXO
-   * @returns {string} indicating the success status
-   */
-  async outputAdded(txid: string, outputIndex: number, outputScript: Script, topic: string) {
+  async outputAdmittedByTopic(payload: OutputAdmittedByTopic) {
+    if (payload.mode !== 'locking-script') throw new Error('Invalid payload')
+      const { txid, outputIndex, topic, lockingScript } = payload
     if (topic !== 'tm_users') return
     // Decode the UMP fields from the Bitcoin outputScript
-    const result = PushDrop.decode(outputScript)
+    const result = PushDrop.decode(lockingScript)
 
     // UMP Account Fields to store (from the UMP protocol's PushDrop field order)
     const presentationHash = Utils.toHex(result.fields[6])
@@ -51,25 +47,17 @@ class UMPLookupService implements LookupService {
     })
   }
 
-  /**
-   * Deletes the output record once the UTXO has been spent
-   * @param {ob} obj all params given inside an object
-   * @param {string} obj.txid the transactionId the transaction the UTXO is apart of
-   * @param {Number} obj.outputIndex the index of the given UTXO
-   * @param {string} obj.topic the topic this UTXO is apart of
-   * @returns
-   */
-  async outputSpent(txid: string, outputIndex: number, topic: string) {
+  async outputSpent(payload: OutputSpent) {
+    if (payload.mode !== 'none') throw new Error('Invalid payload')
+    const { topic, txid, outputIndex } = payload
     if (topic !== 'tm_users') return
     await this.records.deleteOne({ txid, outputIndex })
   }
 
-  /**
-   *
-   * @param {object} obj all params given in an object
-   * @param {object} obj.query lookup query given as an object
-   * @returns {object} with the data given in an object
-   */
+  async outputEvicted(txid: string, outputIndex: number) {
+    await this.records.deleteOne({ txid, outputIndex })
+  }
+
   async lookup({ query }: any): Promise<UTXOReference[]> {
     // Validate Query
     if (!query) {
