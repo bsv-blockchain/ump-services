@@ -20,16 +20,6 @@
       ]
     },
     {
-      "name": "babbage",
-      "provider": "CARS",
-      "CARSCloudURL": "https://cars.babbage.systems",
-      "projectID": "2efa4b8fe4c2bd42083636871b007e9e",
-      "network": "mainnet",
-      "deploy": [
-        "backend"
-      ]
-    },
-    {
       "name": "Babbage testnet",
       "provider": "CARS",
       "CARSCloudURL": "https://cars.babbage.systems",
