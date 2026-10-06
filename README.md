@@ -10,10 +10,16 @@ existing newest-record selection and database schema. The provider runtime
 must use `@bsv/overlay` 2.6.4 or later together with this factory so selected
 ancestors remain in the lookup answer after confirmation. Wallet consumers
 need Wallet Toolbox, client, or mobile 2.14.6 or later for pin continuity.
+The release pins SDK3.1.0 and Overlay Express2.7.4 alongside the engine,
+with MongoDB driver7.7.0 to meet their declared runtime dependency contract;
+CARS preserves these application dependency pins when generating its runtime.
 Deploy the paired provider and engine changes through CARS after publication
 and package/provenance verification. Validate confirmed update lineage and
 public route availability before production promotion. Existing WAB pins
 remain unchanged during this release.
+`npm run deploy` uses the CLI's `cars release now 1` command. Keep real
+deployment metadata and the resulting release archive in a private operational
+context, outside the public source checkout.
 
 Helpful Links:
 
@@ -66,3 +72,15 @@ The one constant is `deployment-info.json`.
 ## License
 
 [Open BSV License](./LICENSE.txt)
+
+
+The lookup integration fixture pins MongoDB7.0.24 and bounds driver selection
+and connection below the existing five-second Jest hook limit. Each test still
+gets its own disposable server/database. For local qualification,
+MONGOMS_SYSTEM_BINARY may identify an independently verified cached binary;
+production deployment does not consume this test-only setting.
+
+The test scripts enable Node's VM module support as required by Jest29 for the
+MongoDB7 driver's dynamic OS-adapter import. This retains the driver's default
+runtime adapter and real server handshakes. Production Node does not need this
+Jest-only flag; no connection mocking or test timeout increase is used.
