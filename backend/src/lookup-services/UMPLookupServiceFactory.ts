@@ -5,6 +5,8 @@ import { UMPRecord } from '../types.js'
 import { Db, Collection } from 'mongodb'
 import umpLookupDocs from './UMPLookupDocs.md.js'
 
+const MAX_MATCHING_RECORDS = 200
+
 /**
  * Implements a Lookup Service for the User Management Protocol
  */
@@ -98,6 +100,7 @@ class UMPLookupService implements LookupService {
 
     // build the filter based on which key is present
     let filter: Record<string, any>
+    let exactOutpoint = false
     if (query.presentationHash) {
       filter = { presentationHash: query.presentationHash }
     } else if (query.recoveryHash) {
@@ -105,26 +108,33 @@ class UMPLookupService implements LookupService {
     } else if (query.outpoint) {
       const [txid, outputIndex] = (query.outpoint as string).split('.')
       filter = { txid, outputIndex: Number(outputIndex) }
+      exactOutpoint = true
     } else {
       throw new Error(
         'Query parameters must include presentationHash, recoveryHash, or outpoint!'
       )
     }
 
-    // find the single newest document
-    const doc = await this.records.findOne(filter, {
-      sort: { _id: -1 }
-    })
-
-    if (!doc) return []
-    // UMP updates retain their predecessors. The corrected overlay engine
-    // includes this selected lineage even when an ancestor is confirmed.
-    // Engine traversal limits remain authoritative.
-    return [{
+    let docs: UMPRecord[]
+    if (exactOutpoint) {
+      const doc = await this.records.findOne(filter, { sort: { _id: -1 } })
+      docs = doc ? [doc] : []
+    } else {
+      // Database insertion order is not token-control continuity. Return all
+      // bounded candidates so the client can anchor selection to its trusted
+      // pin and verify successor spends, even across confirmed predecessors.
+      docs = await this.records.find(filter, { projection: { txid: 1, outputIndex: 1 } })
+        .sort({ _id: -1 }).limit(MAX_MATCHING_RECORDS + 1).toArray()
+      if (docs.length > MAX_MATCHING_RECORDS) {
+        throw new RangeError('UMP lookup exceeds the bounded matching-record limit')
+      }
+    }
+    const unique = new Map(docs.map(doc => [`${doc.txid}.${doc.outputIndex}`, doc]))
+    return [...unique.values()].map(doc => ({
       txid: doc.txid,
       outputIndex: doc.outputIndex,
       history: () => Promise.resolve(true)
-    }]
+    }))
   }
 }
 
