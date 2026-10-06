@@ -275,7 +275,7 @@ describe('UMPLookupService', () => {
       ).rejects.toThrow('Query parameters must include')
     })
 
-    it('should return newest record when multiple exist', async () => {
+    it('returns both branches so a database-newer record cannot conceal a trusted pin', async () => {
       const collection = db.collection<UMPRecord>('ump')
       await collection.insertMany([
         {
@@ -296,8 +296,28 @@ describe('UMPLookupService', () => {
         query: { presentationHash: 'same' }
       })
 
-      expect(result).toHaveLength(1)
-      expect(result[0].txid).toBe('new') // Newest by _id
+      expect(result.map(output => output.txid)).toEqual(['new', 'old'])
+      for (const output of result) {
+        if (typeof output.history !== 'function') throw new Error('Missing history')
+        await expect(output.history([], 0, 0)).resolves.toBe(true)
+      }
+    })
+
+    it('returns one formula entry for repeated records of the same outpoint', async () => {
+      await db.collection<UMPRecord>('ump').insertMany(Array.from({ length: 3 }, () => ({
+        txid: 'same-outpoint', outputIndex: 2, presentationHash: 'repeated', recoveryHash: 'repeated-recovery'
+      })))
+      expect(await service.lookup({ query: { presentationHash: 'repeated' } })).toHaveLength(1)
+    })
+
+    it('rejects overflow without silently truncating candidate branches', async () => {
+      await db.collection<UMPRecord>('ump').insertMany(Array.from({ length: 201 }, (_, index) => ({
+        txid: `candidate-${index}`, outputIndex: 0, presentationHash: 'overflow', recoveryHash: 'overflow-recovery'
+      })))
+      await expect(service.lookup({ query: { presentationHash: 'overflow' } })).rejects.toThrow(RangeError)
+      await expect(service.lookup({ query: { recoveryHash: 'overflow-recovery' } })).rejects.toThrow(RangeError)
+      // An exact known outpoint remains bounded independently of hash fan-out.
+      expect(await service.lookup({ query: { outpoint: 'candidate-0.0' } })).toHaveLength(1)
     })
   })
 

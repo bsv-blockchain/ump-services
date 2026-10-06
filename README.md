@@ -6,7 +6,10 @@ Standard BSV project structure.
 
 The custom `ls_users` lookup factory requests retained token-update history
 for presentation-hash, recovery-hash, and outpoint queries. It preserves the
-existing newest-record selection and database schema. The provider runtime
+existing database schema. Hash queries return at most 200 matching records,
+deduplicated by outpoint, so the wallet can choose a branch anchored to its
+trusted pin and verify successor spends. A larger result fails explicitly;
+exact-outpoint queries still select one record. The provider runtime
 must use `@bsv/overlay` 2.6.4 or later together with this factory so selected
 ancestors remain in the lookup answer after confirmation. Wallet consumers
 need Wallet Toolbox, client, or mobile 2.14.6 or later for pin continuity.
