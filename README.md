@@ -2,6 +2,19 @@
 
 Standard BSV project structure.
 
+## UMP retained-lineage release
+
+The custom `ls_users` lookup factory requests retained token-update history
+for presentation-hash, recovery-hash, and outpoint queries. It preserves the
+existing newest-record selection and database schema. The provider runtime
+must use `@bsv/overlay` 2.6.4 or later together with this factory so selected
+ancestors remain in the lookup answer after confirmation. Wallet consumers
+need Wallet Toolbox, client, or mobile 2.14.6 or later for pin continuity.
+Deploy the paired provider and engine changes through CARS after publication
+and package/provenance verification. Validate confirmed update lineage and
+public route availability before production promotion. Existing WAB pins
+remain unchanged during this release.
+
 Helpful Links:
 
 - [LARS (for local development)](https://github.com/bitcoin-sv/lars)
