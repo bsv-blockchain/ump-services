@@ -40,17 +40,17 @@ describe('UMPLookupService', () => {
   let service: ReturnType<typeof UMPLookupServiceFactory>
 
   beforeEach(async () => {
-    mongod = await MongoMemoryServer.create()
+    mongod = await MongoMemoryServer.create({ binary: { version: '7.0.24' } })
     const uri = mongod.getUri()
-    client = new MongoClient(uri)
+    client = new MongoClient(uri, { serverSelectionTimeoutMS: 1500, connectTimeoutMS: 1000 })
     await client.connect()
     db = client.db('test')
     service = UMPLookupServiceFactory(db)
   })
 
   afterEach(async () => {
-    await client.close()
-    await mongod.stop()
+    await client?.close()
+    await mongod?.stop()
   })
 
   // Helper to create core UMP fields

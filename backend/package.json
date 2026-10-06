@@ -23,9 +23,9 @@
     }
   },
   "scripts": {
-    "test": "npm run build && jest",
-    "test:watch": "npm run build && jest --watch",
-    "test:coverage": "npm run build && jest --coverage",
+    "test": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "npm run build && node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "lint": "ts-standard --fix src/**/*.ts",
     "build": "tsc -b",
     "prepublish": "npm run build",
@@ -43,8 +43,9 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@bsv/overlay": "^2.0.2",
-    "@bsv/sdk": "^2.0.13",
-    "mongodb": "^6.11.0"
+    "@bsv/overlay": "2.6.4",
+    "@bsv/sdk": "3.1.0",
+    "mongodb": "7.7.0",
+    "@bsv/overlay-express": "2.7.4"
   }
 }

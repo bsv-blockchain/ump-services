@@ -1,6 +1,7 @@
 import { AdmissionMode, LookupService, OutputAdmittedByTopic, OutputSpent, SpendNotificationMode } from '@bsv/overlay'
+import type { LookupFormula } from '@bsv/overlay'
 import { PushDrop, Utils } from '@bsv/sdk'
-import { UMPRecord, UTXOReference } from '../types.js'
+import { UMPRecord } from '../types.js'
 import { Db, Collection } from 'mongodb'
 import umpLookupDocs from './UMPLookupDocs.md.js'
 
@@ -89,7 +90,7 @@ class UMPLookupService implements LookupService {
     await this.records.deleteOne({ txid, outputIndex })
   }
 
-  async lookup({ query }: any): Promise<UTXOReference[]> {
+  async lookup({ query }: any): Promise<LookupFormula> {
     // Validate Query
     if (!query) {
       throw new Error('Lookup must include a valid query!')
@@ -116,7 +117,14 @@ class UMPLookupService implements LookupService {
     })
 
     if (!doc) return []
-    return [{ txid: doc.txid, outputIndex: doc.outputIndex }]
+    // UMP updates retain their predecessors. The corrected overlay engine
+    // includes this selected lineage even when an ancestor is confirmed.
+    // Engine traversal limits remain authoritative.
+    return [{
+      txid: doc.txid,
+      outputIndex: doc.outputIndex,
+      history: () => Promise.resolve(true)
+    }]
   }
 }
 
