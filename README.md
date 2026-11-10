@@ -74,7 +74,7 @@ The one constant is `deployment-info.json`.
 
 ## License
 
-[Open BSV License](./LICENSE.txt)
+[Apache License 2.0](LICENSE)
 
 
 The lookup integration fixture pins MongoDB7.0.24 and bounds driver selection
